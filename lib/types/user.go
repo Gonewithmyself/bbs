@@ -26,3 +26,9 @@ type RegForm struct {
 	Name    string `form:"username"`
 	Vercode string `form:"vercode"`
 }
+
+type Password struct {
+	Old   string
+	New   string
+	Renew string
+}

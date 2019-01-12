@@ -17,6 +17,52 @@ func (c *UserController) Index() {
 }
 
 //配置信息
+func (c *UserController) Set() {
+	switch c.Ctx.Request.Method {
+	case "GET":
+		c.TplName = c.controllerName + "/set.html"
+	case "POST":
+		c.setPost()
+	default:
+		c.History("", "/")
+	}
+
+}
+
+func (c *UserController) setPost() {
+	user := c.getUser()
+	if nil == user {
+		c.msgString(-1, "login first")
+		return
+	}
+
+	data := &types.Password{}
+	c.ParseForm(data)
+	fmt.Println(data)
+	if util.Md5(data.Old) != user.Password {
+		c.msgString(-1, "wrong password")
+		return
+	}
+
+	if data.New != data.Renew {
+		c.msgString(-1, "wrong password")
+		return
+	}
+
+	md5 := util.Md5(data.New)
+	if md5 == user.Password {
+		c.msgString(-1, "same with old")
+	}
+
+	user.Password = md5
+	_, err := c.o.Update(user, "password")
+	if nil != err {
+		c.msgString(-1, err)
+	}
+	c.msgString(0, "/login")
+}
+
+//配置信息
 func (c *UserController) Login() {
 	switch c.Ctx.Request.Method {
 	case "GET":
