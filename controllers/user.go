@@ -25,8 +25,12 @@ func (c *UserController) Login() {
 		println("defualt")
 	}
 
-	println("ctl name", c.controllerName)
+}
 
+func (c *UserController) Logout() {
+	c.sess.Set(nil)
+	c.sess.SetAuth(false)
+	c.Redirect("/", 301)
 }
 
 //配置信息
