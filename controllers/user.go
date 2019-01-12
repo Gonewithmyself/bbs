@@ -12,6 +12,11 @@ type UserController struct {
 }
 
 //配置信息
+func (c *UserController) Index() {
+	c.TplName = c.controllerName + "/index.html"
+}
+
+//配置信息
 func (c *UserController) Login() {
 	switch c.Ctx.Request.Method {
 	case "GET":

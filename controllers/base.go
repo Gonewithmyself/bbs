@@ -25,6 +25,11 @@ func (p *baseController) Prepare() {
 	p.o = orm.NewOrm()
 
 	p.initSession()
+	p.SetLogin()
+}
+
+func (c *baseController) SetLogin() {
+	c.Data["login"] = c.sess.DoesLogin()
 }
 
 func (p *baseController) History(msg string, url string) {

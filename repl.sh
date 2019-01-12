@@ -3,5 +3,5 @@
 src="..\/..\/res\/"
 dst="\/static\/plug\/fly\/"
 
-# find views/ -name \*.html | xargs sed -i "s/radiumme.com\/dragon/radiumme.com\/story/g"
-find . -name main* | xargs sed -i '' "s/${src}/${dst}/g"
+# macos -i 后面需要指定备份文件
+find views -name \*.html | xargs sed -i '' "s/${src}/${dst}/g"
