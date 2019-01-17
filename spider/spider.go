@@ -1,6 +1,7 @@
 package spider
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 const (
 	url1    = "https://fanyi.baidu.com/basetrans"
+	url0    = "https://fanyi.baidu.com/extendtrans"
 	url2    = "http://localhost:8080"
 	Url     = url1
 	Agent   = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Mobile Safari/537.36"
@@ -29,31 +31,113 @@ type Dict struct {
 	Means map[string]string
 }
 
+type Ext struct {
+	St    string
+	Edict map[string]string
+}
+
 func NewDict() *Dict {
 	return &Dict{
 		Means: make(map[string]string),
 	}
 }
 
-func trans(word string) *Dict {
-	req := gorequest.New()
+func NewExt() *Ext {
+	return &Ext{
+		Edict: make(map[string]string),
+	}
+}
+
+var req = gorequest.New()
+
+func post(word, url string) string {
+	if "b" == url {
+		url = url1
+	} else {
+		url = url0
+	}
+
 	data := fmt.Sprintf(JsonFmt, word)
-	resp, body, err := req.Post(Url).Set("User-Agent", Agent).Set("X-Requested-With", "XMLHttpRequest").
+	resp, body, err := req.Post(url).Set("User-Agent", Agent).Set("X-Requested-With", "XMLHttpRequest").
 		Set("Cookie", "BAIDUID=3395EB2E85B1B8F49DF5F52818DFEFE4:FG=1;").Set("Referer", "https://fanyi.baidu.com/").
 		Send(data).End()
 
 	if nil != err {
 		log.Print(err)
+		return ""
 	}
 
-	dict := NewDict()
+	_ = resp
+	return body
+}
+
+func trans(word string) *Dict {
+	body := post(word, "b")
+	var dict *Dict
+	defer func() {
+		r := recover()
+		if nil != r {
+			log.Print(r)
+			dict = nil
+		}
+	}()
+
+	dict = NewDict()
 	str := gjson.Get(body, "dict").String()
 	dict.Ex = parseEx(str)
 	dict.Means = parseMeans(str)
 	dict.Ph = get(str, "symbols.0.ph_am").String()
 
-	_ = resp
 	return dict
+}
+
+func extend(word string) *Ext {
+	body := post(word, "")
+	var ext *Ext
+	defer func() {
+		r := recover()
+		if nil != r {
+			log.Print(r)
+			ext = nil
+		}
+	}()
+	ext = NewExt()
+	ext.Edict = extendEn(body)
+	ext.St = extendZh(body)
+	return ext
+}
+
+// en eg.
+func extendEn(body string) map[string]string {
+	items := get(body, "data.edict.item.0.tr_group").Array()
+	groups := toString(items)
+
+	println(groups)
+
+	var edict = make(map[string]string, len(groups))
+	for i := range groups {
+		tr := get(groups[i], "tr").String()
+		eg := get(groups[i], "example").String()
+		edict[tr] = eg
+	}
+	return edict
+}
+
+// zh eg.
+func extendZh(body string) string {
+	st := get(body, "data.st").String()
+	return st
+}
+
+func Trans(word string) string {
+	dict := trans(word)
+	if nil == dict {
+		return ""
+	}
+
+	d, _ := json.Marshal(dict.Means)
+
+	return escapeHtml(string(d)) + "\r\n" + dict.Ph
 }
 
 func parseMeans(d string) map[string]string {
@@ -84,7 +168,6 @@ func parseEx(d string) string {
 			continue
 		}
 
-		println(p, "xxx")
 		p = strings.TrimLeft(p, "[\"")
 		p = strings.TrimRight(p, "}")
 		p = strings.TrimRight(p, ",\"]")
@@ -103,4 +186,24 @@ func toString(list []gjson.Result) (res []string) {
 		res = append(res, list[i].String())
 	}
 	return res
+}
+
+var jsEMap = map[string]string{
+	"\\u003c": "<",
+	"\\u003e": ">",
+	"\\u0026": "&",
+}
+
+func escapeHtml(content string) string {
+	for k, v := range jsEMap {
+		content = strings.Replace(content, k, v, -1)
+	}
+	return content
+}
+
+func recoverFn(params ...interface{}) {
+	r := recover()
+	if nil != r {
+		log.Println(params, r)
+	}
 }
