@@ -14,8 +14,10 @@ type baseController struct {
 	beego.Controller
 	o              orm.Ormer
 	sess           *types.Session
+	fn             func()
 	controllerName string
 	actionName     string
+	auth           string
 }
 
 func (p *baseController) Prepare() {
@@ -26,6 +28,7 @@ func (p *baseController) Prepare() {
 
 	p.initSession()
 	p.SetLogin()
+
 }
 
 func (c *baseController) SetLogin() {
@@ -57,7 +60,7 @@ func (c *baseController) initSession() {
 
 	if auth != "" {
 		isess := c.GetSession(auth)
-		if sess, ok = isess.(*types.Session); !ok {
+		if sess, ok = isess.(*types.Session); !ok || nil == sess {
 			sess = &types.Session{}
 		}
 
@@ -68,7 +71,12 @@ func (c *baseController) initSession() {
 	}
 
 	c.sess = sess
+	c.auth = auth
 	c.SetSession(auth, sess)
+}
+
+func (c *baseController) delSession() {
+	c.SetSession(c.auth, nil)
 }
 
 //获取用户IP地址

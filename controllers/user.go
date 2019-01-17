@@ -38,14 +38,14 @@ func (c *UserController) setPost() {
 
 	data := &types.Password{}
 	c.ParseForm(data)
-	fmt.Println(data)
+	fmt.Println(data, c.GetString("old"))
 	if util.Md5(data.Old) != user.Password {
 		c.msgString(-1, "wrong password")
 		return
 	}
 
 	if data.New != data.Renew {
-		c.msgString(-1, "wrong password")
+		c.msgString(-1, "password not equal")
 		return
 	}
 
@@ -79,9 +79,10 @@ func (c *UserController) Login() {
 }
 
 func (c *UserController) Logout() {
+	println("???")
 	c.sess.Set(nil)
 	c.sess.SetAuth(false)
-	c.Redirect("/", 301)
+	c.Redirect("/", 302)
 }
 
 //配置信息
