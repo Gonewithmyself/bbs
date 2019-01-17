@@ -1,13 +1,10 @@
 package routers
 
 import (
-	"bbs/controllers"
-
+	"anki/controllers"
 	"github.com/astaxie/beego"
 )
 
 func init() {
-	beego.Router("/", &controllers.HomeController{}, "*:Home")
-	beego.Router("/login", &controllers.UserController{}, "*:Login")
-	beego.AutoRouter(&controllers.UserController{})
+    beego.Router("/", &controllers.MainController{})
 }
