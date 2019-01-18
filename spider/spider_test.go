@@ -2,7 +2,6 @@ package spider
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 )
 
@@ -46,9 +45,9 @@ func Test_extend(t *testing.T) {
 					} else if ss[i] == ']' {
 						switch idx {
 
-						case 2:
+						case 1:
 							if cnt < 5 {
-								println("##", ss[m[idx]:i+1])
+								println("##", m[idx], i, ss[m[idx] : i+1][:200])
 							}
 
 							cnt++
@@ -58,15 +57,16 @@ func Test_extend(t *testing.T) {
 					}
 
 				}
-
-				t1 := "他们互相朗诵诗"
-				t2 := "《柯林斯高阶英汉双解学习词典》"
-				d1 := strconv.QuoteToASCII(t1)
-				d2 := strconv.QuoteToASCII(t2)
-				fmt.Println("xx", string(d1))
-				fmt.Println("xx", string(d2))
 				t.Errorf("extend() = %v, want %v", got.St[0], tt.want)
 			}
 		})
 	}
+}
+
+func Test_gjson(t *testing.T) {
+	src := `{"st":[[[["wo"],["shi"]],[["ni"],["ge"]],"xinhua"], [[["wo"],["shi"]],[["ni"],["ge"]],"xinhua"]]}`
+	fmt.Println(get(src, "st"))
+	fmt.Println(get(src, "st.#.0.#"))
+
+	t.Error("")
 }
