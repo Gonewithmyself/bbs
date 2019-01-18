@@ -32,7 +32,7 @@ type Dict struct {
 }
 
 type Ext struct {
-	St    string
+	St    [][2]string
 	Edict map[string]string
 }
 
@@ -124,9 +124,45 @@ func extendEn(body string) map[string]string {
 }
 
 // zh eg.
-func extendZh(body string) string {
-	st := get(body, "data.st").String()
-	return st
+func extendZh(body string) [][2]string {
+	st := get(body, "data.st.0").String()
+	res := [][2]string{}
+	fmt.Println("len", st)
+	// if len(st) > 10 {
+	// 	st = st[:10]
+	// }
+
+	// sts := toString(st)
+	// fmt.Println(sts)
+	// res := make([][2]string, len(sts))
+	// for i := range sts {
+	// 	fmt.Println(sts[i], len(sts))
+	// 	l3 := get(sts[i], "2").String()
+	// 	// fmt.Println(l3)
+	// 	if !strings.Contains(l3, "词典") {
+	// 		break
+	// 	}
+
+	// 	l1 := get(sts[i], "0").String()
+	// 	l2 := get(sts[i], "1").String()
+	// 	fmt.Println("sss", l1, l2, l3)
+
+	// 	res[i][0] = parseEg(l1)
+	// 	res[i][1] = parseEg(l2)
+	// }
+
+	return res
+}
+
+func parseEg(s string) string {
+	l1 := get(s, "0").Array()
+	words := make([]string, len(l1))
+	for i := range l1 {
+		word := get(l1[i].String(), "0").String()
+		words[i] = word
+	}
+
+	return strings.Join(words, "")
 }
 
 func Trans(word string) string {
