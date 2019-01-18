@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	url1    = "https://fanyi.baidu.com/basetrans"
-	url0    = "https://fanyi.baidu.com/extendtrans"
+	url0    = "https://fanyi.baidu.com/basetrans"
+	url1    = "https://fanyi.baidu.com/extendtrans"
 	url2    = "http://localhost:8080"
 	Url     = url1
 	Agent   = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Mobile Safari/537.36"
@@ -36,19 +36,31 @@ func NewExt() *Ext {
 	}
 }
 
-var req = gorequest.New()
+var agent *gorequest.SuperAgent
+var agents [2]*gorequest.SuperAgent
+
+func init() {
+	for i := range agents {
+		url := url0
+		if i == 1 {
+			url = url1
+		}
+		agents[i] = gorequest.New().Post(url).Set("User-Agent", Agent).Set("X-Requested-With", "XMLHttpRequest").
+			Set("Cookie", "BAIDUID=3395EB2E85B1B8F49DF5F52818DFEFE4:FG=1;").Set("Referer", "https://fanyi.baidu.com/")
+	}
+}
 
 func post(word, url string) string {
+	data := fmt.Sprintf(JsonFmt, word)
 	if "b" == url {
-		url = url1
+		agent = agents[0]
 	} else {
-		url = url0
+		agent = agents[1]
 	}
 
-	data := fmt.Sprintf(JsonFmt, word)
-	resp, body, err := req.Post(url).Set("User-Agent", Agent).Set("X-Requested-With", "XMLHttpRequest").
-		Set("Cookie", "BAIDUID=3395EB2E85B1B8F49DF5F52818DFEFE4:FG=1;").Set("Referer", "https://fanyi.baidu.com/").
-		Send(data).End()
+	// setQuery(word)
+	resp, body, err := agent.SendString(data).End()
+	//	fmt.Println("data:", agent.Data)
 
 	if nil != err {
 		log.Print(err)
@@ -57,6 +69,12 @@ func post(word, url string) string {
 
 	_ = resp
 	return body
+}
+
+func setQuery(word string) {
+	agent.Data["query"] = word
+	agent.Data["from"] = "en"
+	agent.Data["to"] = "zh"
 }
 
 func get(js, path string) gjson.Result {

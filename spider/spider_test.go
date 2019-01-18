@@ -31,10 +31,11 @@ func Test_extend(t *testing.T) {
 	}{
 		{"xx", "recite", [][2]string{}},
 	}
+	parser := newParser("word")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := extend(tt.args); len(got.St) != -1 {
-				t.Errorf("extend() = %v, want %v", got, tt.want)
+			if parser.extend(tt.args); len(tt.args) != -1 {
+				t.Errorf("extend() = %v, want %v", "", tt.want)
 			}
 		})
 	}
@@ -48,4 +49,12 @@ func Test_gjson(t *testing.T) {
 	ar := get(src, "st").Array()
 	fmt.Println(len(ar))
 	t.Error("")
+}
+
+func BenchmarkTrans(b *testing.B) {
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Trans("silence")
+	}
 }
