@@ -1,7 +1,6 @@
 package spider
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -17,9 +16,11 @@ func Trans(word string) string {
 		return ""
 	}
 
-	d, _ := json.Marshal(parser.c.Meams)
-	res := escapeHtml(string(d)) + "\r\n" + parser.c.Ph
-	//	go flash(word, dict)
+	res := fmt.Sprintf("%s%s%s", parser.c.Ph, Ln, escapeHtml(parser.c.Meams))
+	go func() {
+		parser.extend(word)
+		saveCard(parser.c)
+	}()
 	return res
 }
 
@@ -47,7 +48,7 @@ func (sp *parser) basic(word string) {
 
 	sp.parseEx(str)
 	sp.parseMeans(str)
-	sp.c.Ph = get(str, "symbols.0.ph_am").String()
+	sp.c.Ph = fmt.Sprintf("[%s]", get(str, "symbols.0.ph_am").String())
 }
 
 func (sp *parser) extend(word string) {
@@ -67,12 +68,11 @@ func (sp *parser) extendEn(body string) {
 	items := get(body, "data.edict.item.0.tr_group").Array()
 	groups := toString(items)
 
-	sp.c.Egen = make([]string, len(groups))
 	for i := range groups {
 		tr := get(groups[i], "tr").String()
 		eg := get(groups[i], "example").String()
-		line := fmt.Sprintf("meaning: %s, eg.: %s", tr, eg)
-		sp.c.Egen[i] = line
+		line := fmt.Sprintf("%d. %s<br />   eg.: %s<br />", i+1, tr, eg)
+		sp.c.Egen += line
 	}
 }
 
@@ -83,8 +83,6 @@ func (sp *parser) extendZh(body string) {
 	ens := get(st, "#.0").Array()
 	zhs := get(st, "#.1").Array()
 
-	sp.c.Egzh = make([]string, len(books))
-	idx := 0
 	for i := range books {
 		if !strings.Contains(books[i].String(), "《") {
 			break
@@ -92,17 +90,12 @@ func (sp *parser) extendZh(body string) {
 
 		en := parseEg(ens[i].String(), true)
 		zh := parseEg(zhs[i].String(), false)
-		sp.c.Egzh[idx] = fmt.Sprintf("%s   %s", en, zh)
-		idx++
+		sp.c.Egzh += fmt.Sprintf("%d. %s<br />   %s<br />", i+1, en, zh)
 	}
-
-	sp.c.Egzh = sp.c.Egzh[:idx]
 }
 
-func (sp *parser) parseMeans(d string) map[string]string {
+func (sp *parser) parseMeans(d string) {
 	parts := gjson.Get(d, "symbols.0.parts").Array()
-	m := make(map[string]string)
-	sp.c.Meams = make([]string, len(parts))
 	for i, part := range parts {
 		p := part.String()
 		attr := get(p, "part").String()
@@ -110,11 +103,9 @@ func (sp *parser) parseMeans(d string) map[string]string {
 		mm := toString(means)
 
 		res := strings.Join(mm, ",")
-		m[attr] = res
-		sp.c.Meams[i] = res
+		res = fmt.Sprintf("%d. %-5s %s<br />", i+1, attr, res)
+		sp.c.Meams += res
 	}
-
-	return m
 }
 
 // ex : {"word_third":["tests"],"word_done":["tested"],"word_pl":["tests"],"word_est":""}
