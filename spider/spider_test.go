@@ -27,46 +27,25 @@ func Test_extend(t *testing.T) {
 	tests := []struct {
 		name string
 		args string
-		want string
+		want [][2]string
 	}{
-		{"xx", "recite", "nil"},
+		{"xx", "recite", [][2]string{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := extend(tt.args); got.St != tt.want {
-				m := map[int]int{}
-				idx := 0
-				ss := got.St
-				cnt := 0
-				for i := range ss {
-					if ss[i] == '[' {
-						idx++
-						m[idx] = i
-					} else if ss[i] == ']' {
-						switch idx {
-
-						case 1:
-							if cnt < 5 {
-								println("##", m[idx], i, ss[m[idx] : i+1][:200])
-							}
-
-							cnt++
-						case 4:
-						}
-						idx--
-					}
-
-				}
-				t.Errorf("extend() = %v, want %v", got.St[0], tt.want)
+			if got := extend(tt.args); len(got.St) != -1 {
+				t.Errorf("extend() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func Test_gjson(t *testing.T) {
-	src := `{"st":[[[["wo"],["shi"]],[["ni"],["ge"]],"xinhua"], [[["wo"],["shi"]],[["ni"],["ge"]],"xinhua"]]}`
-	fmt.Println(get(src, "st"))
-	fmt.Println(get(src, "st.#.0.#"))
+	src := `{"st":[[[["wo"],["shi"]],[["ni"],["ge"]],"xinhua"], [[["ni"],["shi"]],[["wo"],["di"]],"xinhua"]]}`
+	// fmt.Println(get(src, "st"))
+	fmt.Println(get(src, "st.#"))
 
+	ar := get(src, "st").Array()
+	fmt.Println(len(ar))
 	t.Error("")
 }

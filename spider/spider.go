@@ -32,7 +32,7 @@ type Dict struct {
 }
 
 type Ext struct {
-	St    string
+	St    [][2]string
 	Edict map[string]string
 }
 
@@ -71,7 +71,7 @@ func post(word, url string) string {
 	return body
 }
 
-func trans(word string) *Dict {
+func basic(word string) *Dict {
 	body := post(word, "b")
 	var dict *Dict
 	defer func() {
@@ -112,8 +112,6 @@ func extendEn(body string) map[string]string {
 	items := get(body, "data.edict.item.0.tr_group").Array()
 	groups := toString(items)
 
-	println(groups)
-
 	var edict = make(map[string]string, len(groups))
 	for i := range groups {
 		tr := get(groups[i], "tr").String()
@@ -124,20 +122,50 @@ func extendEn(body string) map[string]string {
 }
 
 // zh eg.
-func extendZh(body string) string {
+func extendZh(body string) [][2]string {
 	st := get(body, "data.st").String()
-	return st
+	books := get(st, "#.2").Array()
+	ens := get(st, "#.0").Array()
+	zhs := get(st, "#.1").Array()
+
+	res := make([][2]string, len(books))
+	idx := 0
+	for i := range books {
+		if !strings.Contains(books[i].String(), "《") {
+			continue
+		}
+
+		res[i][0] = parseEg(ens[i].String(), true)
+		res[i][1] = parseEg(zhs[i].String(), false)
+		idx++
+	}
+
+	return res[:idx]
+}
+
+func parseEg(s string, en bool) string {
+	ss := get(s, "#.0").Array()
+	words := toString(ss)
+
+	tag := ""
+	if en {
+		tag = " "
+	}
+
+	line := strings.Join(words, tag)
+	return line
 }
 
 func Trans(word string) string {
-	dict := trans(word)
+	dict := basic(word)
 	if nil == dict {
 		return ""
 	}
 
 	d, _ := json.Marshal(dict.Means)
-
-	return escapeHtml(string(d)) + "\r\n" + dict.Ph
+	res := escapeHtml(string(d)) + "\r\n" + dict.Ph
+	go flash(word, dict)
+	return res
 }
 
 func parseMeans(d string) map[string]string {
