@@ -3,6 +3,7 @@ package spider
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/parnurzeal/gorequest"
@@ -10,13 +11,14 @@ import (
 )
 
 const (
-	url0    = "https://fanyi.baidu.com/basetrans"
-	url1    = "https://fanyi.baidu.com/extendtrans"
-	url2    = "http://localhost:8080"
-	Url     = url1
-	Agent   = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Mobile Safari/537.36"
-	JsonFmt = `from=en&to=zh&query=%s`
-	Ln      = "<br />"
+	url0        = "https://fanyi.baidu.com/basetrans"
+	url1        = "https://fanyi.baidu.com/extendtrans"
+	url2        = "http://localhost:8080"
+	Url         = url1
+	Agent       = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Mobile Safari/537.36"
+	JsonFmt     = `from=en&to=zh&query=%s`
+	Ln          = "<br/>"
+	exPattSting = `\[([\s\S]+?)\]`
 )
 
 type C struct {
@@ -25,19 +27,9 @@ type C struct {
 	Query string
 }
 
-type Ext struct {
-	St    [][2]string
-	Edict map[string]string
-}
-
-func NewExt() *Ext {
-	return &Ext{
-		Edict: make(map[string]string),
-	}
-}
-
 var agent *gorequest.SuperAgent
 var agents [2]*gorequest.SuperAgent
+var exPatt *regexp.Regexp
 
 func init() {
 	for i := range agents {
@@ -48,6 +40,9 @@ func init() {
 		agents[i] = gorequest.New().Post(url).Set("User-Agent", Agent).Set("X-Requested-With", "XMLHttpRequest").
 			Set("Cookie", "BAIDUID=3395EB2E85B1B8F49DF5F52818DFEFE4:FG=1;").Set("Referer", "https://fanyi.baidu.com/")
 	}
+
+	exPatt = regexp.MustCompile(exPattSting)
+	initDb()
 }
 
 func post(word, url string) string {
@@ -99,6 +94,14 @@ func escapeHtml(content string) string {
 		content = strings.Replace(content, k, v, -1)
 	}
 	return content
+}
+
+func replHtmlSpace(src string) string {
+	return strings.Replace(src, " ", "&nbsp;", -1)
+}
+
+func omitQuote(src string) string {
+	return strings.Replace(src, "\"", "", -1)
 }
 
 func recoverFn(params ...interface{}) {

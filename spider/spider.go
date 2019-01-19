@@ -3,6 +3,7 @@ package spider
 import (
 	"fmt"
 	"log"
+	"runtime/debug"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -10,18 +11,34 @@ import (
 
 // external
 func Trans(word string) string {
-	parser := newParser(word)
-	parser.basic(word)
-	if nil == parser.c {
-		return ""
+	c := getCard(word)
+	if nil == c {
+		c = trans(word)
 	}
 
-	res := fmt.Sprintf("%s%s%s", parser.c.Ph, Ln, escapeHtml(parser.c.Meams))
+	if c.Name == "" {
+		return ""
+	}
+	// for test
+	saveCard(c)
+
+	res := fmt.Sprintf("%s%s%s", c.Ph, Ln, escapeHtml(c.Meams))
+	return res
+}
+
+func trans(word string) *Card {
+	parser := newParser(word)
+	parser.basic(word)
+	if "" == parser.c.Name {
+		return parser.c
+	}
+
 	go func() {
 		parser.extend(word)
-		saveCard(parser.c)
+		setCard(parser.c)
 	}()
-	return res
+
+	return parser.c
 }
 
 type parser struct {
@@ -39,12 +56,16 @@ func (sp *parser) basic(word string) {
 	defer func() {
 		r := recover()
 		if nil != r {
-			log.Print(r)
-			sp.c = nil
+			log.Printf("stack %s\n", debug.Stack())
+			sp.c.Name = ""
 		}
 	}()
 
 	str := gjson.Get(body, "dict").String()
+	if str == "[]" {
+		sp.c.Name = ""
+		return
+	}
 
 	sp.parseEx(str)
 	sp.parseMeans(str)
@@ -65,13 +86,14 @@ func (sp *parser) extend(word string) {
 
 // en eg.
 func (sp *parser) extendEn(body string) {
-	items := get(body, "data.edict.item.0.tr_group").Array()
+	items := get(body, "data.edict.item.#.tr_group").Array()
 	groups := toString(items)
 
 	for i := range groups {
-		tr := get(groups[i], "tr").String()
-		eg := get(groups[i], "example").String()
-		line := fmt.Sprintf("%d. %s<br />   eg.: %s<br />", i+1, tr, eg)
+		// just extract one eg per group
+		tr := get(groups[i], "0.tr").String()
+		eg := get(groups[i], "0.example").String()
+		line := fmt.Sprintf("%d. %s<br/>   eg.: %s<br/>", i+1, tr, eg)
 		sp.c.Egen += line
 	}
 }
@@ -90,7 +112,7 @@ func (sp *parser) extendZh(body string) {
 
 		en := parseEg(ens[i].String(), true)
 		zh := parseEg(zhs[i].String(), false)
-		sp.c.Egzh += fmt.Sprintf("%d. %s<br />   %s<br />", i+1, en, zh)
+		sp.c.Egzh += fmt.Sprintf("%d. %s<br/>   %s<br/>", i+1, en, zh)
 	}
 }
 
@@ -103,30 +125,20 @@ func (sp *parser) parseMeans(d string) {
 		mm := toString(means)
 
 		res := strings.Join(mm, ",")
-		res = fmt.Sprintf("%d. %-5s %s<br />", i+1, attr, res)
+		res = fmt.Sprintf("%d. %-8s %-2s<br/>", i+1, attr, res)
 		sp.c.Meams += res
 	}
+
+	sp.c.Meams = replHtmlSpace(sp.c.Meams)
 }
 
 // ex : {"word_third":["tests"],"word_done":["tested"],"word_pl":["tests"],"word_est":""}
 func (sp *parser) parseEx(d string) {
 	ex := gjson.Get(d, "exchange").String()
 
-	parts := strings.Split(ex, ",")
-	res := make([]string, 0, 5)
-	for _, part := range parts {
-		p := strings.Split(part, ":")[1]
-		if p == `""` {
-			continue
-		}
-
-		p = strings.TrimLeft(p, "[\"")
-		p = strings.TrimRight(p, "}")
-		p = strings.TrimRight(p, ",\"]")
-		res = append(res, p)
-	}
-
-	sp.c.Ex = strings.Join(res, ",")
+	parts := exPatt.FindAllString(ex, -1)
+	sp.c.Ex = omitQuote(strings.Join(parts, " "))
+	// fmt.Println("ex", parts)
 }
 
 func parseEg(s string, en bool) string {
