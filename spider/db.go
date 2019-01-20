@@ -6,13 +6,14 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
+	"time"
 )
 
 const (
 	//         1  2  3  4  5  6  7  8  9  10  11
 	fmtStr   = "%s|%s|  |%s|  |  |   |%s|  |%s|%s"
 	saveFile = "data.txt"
-	ankiFile = "anki.txi"
+	ankiFile = "anki.txt"
 )
 
 type Card struct {
@@ -63,6 +64,7 @@ func export2Anki() {
 		lines = append(lines, line)
 	}
 
+	fmt.Println(m, len(m))
 	write(lines)
 }
 
@@ -80,16 +82,23 @@ func saveCard(c *Card) {
 }
 
 // batch trans
-func transWords() {
+func TransWords() {
 	data, err := ioutil.ReadFile("input.txt")
 	if nil != err {
-		log.Println(err)
-		return
+		panic(err)
 	}
 
 	words := strings.Split(string(data), "\n")
 	for _, word := range words {
-		Trans(word)
+		p := newParser(word)
+		time.Sleep(time.Second)
+		p.basic(word)
+		p.extend(word)
+		if p.c.Name == "" {
+			fmt.Println("null", word)
+		}
+		m[word] = p.c
+		fmt.Println("now", word)
 	}
 
 	export2Anki()

@@ -86,3 +86,8 @@ func getEx(src string) string {
 	fmt.Println(exPatt.FindAllString(src, -1))
 	return exPatt.String()
 }
+
+func Test_to(t *testing.T) {
+	TransWords()
+	t.Error("123")
+}
