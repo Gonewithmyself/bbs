@@ -90,15 +90,15 @@ func TransWords() {
 
 	words := strings.Split(string(data), "\n")
 	for _, word := range words {
+		word = word[:len(word)-1]
 		p := newParser(word)
 		time.Sleep(time.Second)
 		p.basic(word)
 		p.extend(word)
 		if p.c.Name == "" {
-			fmt.Println("null", word)
+			fmt.Println("null", word, []byte(word))
 		}
 		m[word] = p.c
-		fmt.Println("now", word)
 	}
 
 	export2Anki()

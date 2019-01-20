@@ -64,7 +64,7 @@ func (sp *parser) basic(word string) {
 	str := gjson.Get(body, "dict").String()
 	if str == "[]" {
 		sp.c.Name = ""
-		return
+		log.Printf("parse dict [] %s\nbody %s\n", str, body)
 	}
 
 	sp.parseEx(str)
