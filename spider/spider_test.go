@@ -91,3 +91,8 @@ func Test_to(t *testing.T) {
 	TransWords()
 	t.Error("123")
 }
+
+func Test_mp3(t *testing.T) {
+	getMp3("tier")
+	t.Error("123")
+}
