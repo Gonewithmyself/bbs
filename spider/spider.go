@@ -20,7 +20,7 @@ func Trans(word string) string {
 		return ""
 	}
 	// for test
-	saveCard(c)
+	// saveCard(c)
 
 	res := fmt.Sprintf("%s%s%s", c.Ph, Ln, escapeHtml(c.Meams))
 	return res

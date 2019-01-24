@@ -26,7 +26,7 @@ type Card struct {
 }
 
 var m map[string]*Card
-var dbon bool
+var dbon bool = true
 
 func getCard(word string) *Card {
 	if !dbon {
