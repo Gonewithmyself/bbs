@@ -88,6 +88,10 @@ func getMp3(word string) {
 	}
 }
 
+func GetMp3(word string) {
+	getMp3(word)
+}
+
 func setQuery(word string) {
 	agent.Data["query"] = word
 	agent.Data["from"] = "en"

@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	//         1  2  3  4  5  6  7  8  9  10  11
+	//          1  2  3  4  5  6  7  8  9  10  11
 	fmtStr   = "%s|%s|  |%s|  |  |   |%s|  |%s|%s"
+	fmtStr1  = "%s|%s|  |%s|  |  |[sound:%s.mp3]|%s|  |%s|%s\n" //mp3
 	saveFile = "data.txt"
 	ankiFile = "anki.txt"
 )
@@ -57,6 +58,12 @@ func exportCard(c *Card) string {
 	return line
 }
 
+// mp3
+func ExportCard(c *Card) string {
+	line := fmt.Sprintf(fmtStr1, c.Name, c.Ph, c.Meams, c.Name, c.Ex, c.Egzh, c.Egen)
+	return line
+}
+
 func export2Anki() {
 	var lines = make([]string, 0, len(m))
 	for _, card := range m {
@@ -66,6 +73,7 @@ func export2Anki() {
 
 	fmt.Println(m, len(m))
 	write(lines)
+	Dump()
 }
 
 func write(lines []string) {
@@ -90,9 +98,13 @@ func TransWords() {
 
 	words := strings.Split(string(data), "\n")
 	for _, word := range words {
-		word = word[:len(word)-1]
+		if getCard(word) != nil {
+			continue
+		}
+
+		// word = word[:len(word)-1]
 		p := newParser(word)
-		time.Sleep(time.Second)
+		time.Sleep(time.Second / 2)
 		p.basic(word)
 		p.extend(word)
 		if p.c.Name == "" {
@@ -117,4 +129,8 @@ func initDb() {
 	if nil != err {
 		log.Println("unmarshal json", err)
 	}
+}
+
+func GetM() map[string]*Card {
+	return m
 }

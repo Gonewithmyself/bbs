@@ -35,6 +35,7 @@ func trans(word string) *Card {
 
 	go func() {
 		parser.extend(word)
+		getMp3(word)
 		setCard(parser.c)
 	}()
 
