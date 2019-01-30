@@ -96,3 +96,8 @@ func Test_mp3(t *testing.T) {
 	getMp3("tier")
 	t.Error("123")
 }
+
+func Test_sign(t *testing.T) {
+	getSign("over")
+	t.Error("123")
+}

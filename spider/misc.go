@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/parnurzeal/gorequest"
+	"github.com/robertkrimen/otto"
 	"github.com/tidwall/gjson"
 )
 
@@ -17,11 +18,13 @@ const (
 	url2        = "http://localhost:8080"
 	Url         = url1
 	Agent       = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Mobile Safari/537.36"
-	JsonFmt     = `from=en&to=zh&query=%s`
+	JsonFmt     = `from=en&to=zh&query=%s&token=05301f0daa555e723f477ec3b63f3638&sign=%s`
 	phFmt       = `https://fanyi.baidu.com/gettts?lan=en&text=%s&spd=3&source=wise`
 	Ln          = "<br/>"
 	exPattSting = `\[([\s\S]+?)\]`
 	mediaDir    = `./media/%s.mp3`
+	cookie      = `BAIDUID=26573F942C2978C7C6FAA992BD1C75C8:FG=1;locale=zh;path=/;domain=.baidu.com`
+	SignJs      = "spider/sign.js"
 )
 
 type C struct {
@@ -42,18 +45,19 @@ func init() {
 			url = url1
 		}
 		agents[i] = gorequest.New().Post(url).Set("User-Agent", Agent).Set("X-Requested-With", "XMLHttpRequest").Set("Connection", "keep-alive").
-			Set("Cookie", "BAIDUID=3395EB2E85B1B8F49DF5F52818DFEFE4:FG=1;").Set("Referer", "https://fanyi.baidu.com/")
+			Set("Cookie", cookie).Set("Referer", "https://fanyi.baidu.com/")
 	}
 
 	phAgent = gorequest.New().Set("User-Agent", Agent).Set("Connection", "keep-alive").
-		Set("Cookie", "BAIDUID=3395EB2E85B1B8F49DF5F52818DFEFE4:FG=1;").Set("Referer", "https://fanyi.baidu.com/")
+		Set("Referer", "https://fanyi.baidu.com/").
+		Set("Cookie", "BAIDUID=26573F942C2978C7C6FAA992BD1C75C8:FG=1;")
 
 	exPatt = regexp.MustCompile(exPattSting)
 	initDb()
 }
 
 func post(word, url string) string {
-	data := fmt.Sprintf(JsonFmt, word)
+	data := fmt.Sprintf(JsonFmt, word, getSign(word))
 	if "b" == url {
 		agent = agents[0]
 	} else {
@@ -134,5 +138,42 @@ func recoverFn(params ...interface{}) {
 	r := recover()
 	if nil != r {
 		log.Println(params, r)
+	}
+}
+
+func getSign(word string) string {
+	jsWord, err := vm.ToValue(word)
+	if nil != err {
+		panic(err)
+	}
+
+	res, err := vm.Call("token", nil, jsWord, gtk)
+	if nil != err {
+		panic(err)
+	}
+
+	sign, _ := res.ToString()
+	return sign
+}
+
+// init vm
+var vm *otto.Otto
+var gtk otto.Value
+
+func init() {
+	vm = otto.New()
+	src, err := ioutil.ReadFile(SignJs)
+	if nil != err {
+		panic(err)
+	}
+
+	_, err = vm.Run(src)
+	if nil != err {
+		panic(err)
+	}
+
+	gtk, err = vm.ToValue("320305.131321201")
+	if nil != err {
+		panic(err)
 	}
 }

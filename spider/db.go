@@ -45,11 +45,15 @@ func setCard(c *Card) {
 }
 
 func Dump() {
+	nosave := true
+	if nosave {
+		// return
+	}
+
 	data, err := json.Marshal(m)
 	if nil != err {
 		log.Println("dump data error")
 	}
-
 	ioutil.WriteFile(saveFile, data, 0644)
 }
 
