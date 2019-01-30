@@ -40,6 +40,9 @@ func getCard(word string) *Card {
 }
 
 func setCard(c *Card) {
+	if c.Meams == "" {
+		return
+	}
 	m[c.Name] = c
 	Dump()
 }

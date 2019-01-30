@@ -101,3 +101,9 @@ func Test_sign(t *testing.T) {
 	getSign("over")
 	t.Error("123")
 }
+
+func Test_token(t *testing.T) {
+	prepareToken()
+	t.Log(token, gtk)
+	t.Error("123")
+}

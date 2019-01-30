@@ -18,7 +18,7 @@ const (
 	url2        = "http://localhost:8080"
 	Url         = url1
 	Agent       = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Mobile Safari/537.36"
-	JsonFmt     = `from=en&to=zh&query=%s&token=05301f0daa555e723f477ec3b63f3638&sign=%s`
+	JsonFmt     = `from=en&to=zh&query=%s&token=%s&sign=%s`
 	phFmt       = `https://fanyi.baidu.com/gettts?lan=en&text=%s&spd=3&source=wise`
 	Ln          = "<br/>"
 	exPattSting = `\[([\s\S]+?)\]`
@@ -57,7 +57,7 @@ func init() {
 }
 
 func post(word, url string) string {
-	data := fmt.Sprintf(JsonFmt, word, getSign(word))
+	data := fmt.Sprintf(JsonFmt, word, token, getSign(word))
 	if "b" == url {
 		agent = agents[0]
 	} else {
@@ -147,7 +147,7 @@ func getSign(word string) string {
 		panic(err)
 	}
 
-	res, err := vm.Call("token", nil, jsWord, gtk)
+	res, err := vm.Call("token", nil, jsWord, gtkV)
 	if nil != err {
 		panic(err)
 	}
@@ -158,13 +158,18 @@ func getSign(word string) string {
 
 // init vm
 var vm *otto.Otto
-var gtk otto.Value
+var gtkV otto.Value
 
 func init() {
+	prepareToken()
 	vm = otto.New()
 	src, err := ioutil.ReadFile(SignJs)
 	if nil != err {
-		panic(err)
+		src, err = ioutil.ReadFile("sign.js")
+		if nil != err {
+			panic(err)
+		}
+
 	}
 
 	_, err = vm.Run(src)
@@ -172,8 +177,31 @@ func init() {
 		panic(err)
 	}
 
-	gtk, err = vm.ToValue("320305.131321201")
+	gtkV, err = vm.ToValue(gtk)
 	if nil != err {
 		panic(err)
 	}
+}
+
+var token, gtk string
+
+func prepareToken() {
+	url := `https://fanyi.baidu.com/`
+	agent := gorequest.New().Get(url).Set("User-Agent", Agent).Set("Connection", "keep-alive").
+		Set("Cookie", cookie)
+
+	resp, body, err := agent.End()
+	if nil != err {
+		fmt.Println(err)
+	}
+
+	// token: '05301f0daa555e723f477ec3b63f3638',
+	tkPatt := regexp.MustCompile(`token: '([\S]+?)'`)
+	token = tkPatt.FindStringSubmatch(body)[1]
+
+	// gtk: '320305.131321201'
+	gtkPatt := regexp.MustCompile(`gtk: '([\S]+?)'`)
+	gtk = gtkPatt.FindStringSubmatch(body)[1]
+	// fmt.Println(tk, gtk)
+	_, _ = resp, body
 }
