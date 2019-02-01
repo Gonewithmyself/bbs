@@ -107,3 +107,12 @@ func Test_token(t *testing.T) {
 	t.Log(token, gtk)
 	t.Error("123")
 }
+
+func Test_regex(t *testing.T) {
+	var src = `goto school, goto home, goto station`
+	patt := regexp.MustCompile(`goto ([\S]+?)`)
+	res := patt.FindAllStringSubmatch(src, -1)
+	t.Log(res)
+
+	t.Error("123")
+}
