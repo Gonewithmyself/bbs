@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -43,6 +45,58 @@ func (l ltslice) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
 func (l ltslice) Less(i, j int) bool { return l[i].l < l[j].l }
 
 func AnalyseLottery() {
+	checkDuplicate()
+	checkFrequency()
+}
+
+func checkFrequency() {
+	var (
+		red  = make(map[int]*ltInfo)
+		blue = make(map[int]*ltInfo)
+		bs   = ltslice{}
+		rs   = ltslice{}
+	)
+
+	fn := func(m map[int]*ltInfo, src string) {
+		ball, err := strconv.Atoi(src)
+		panicError(err)
+		if cnt, ok := m[ball]; !ok {
+			m[ball] = &ltInfo{l: 1, ball: src}
+		} else {
+			cnt.l++
+		}
+	}
+
+	for _, ball := range bp.PhaseInfo {
+		reds := strings.Split(ball, " ")
+		for _, r := range reds[:6] {
+			fn(red, r)
+		}
+		fn(blue, reds[6:][0])
+
+	}
+
+	for _, i := range red {
+		rs = append(rs, i)
+	}
+
+	for _, i := range blue {
+		bs = append(bs, i)
+	}
+
+	sort.Sort(rs)
+	sort.Sort(bs)
+	for _, i := range bs {
+		fmt.Println(i)
+	}
+	fmt.Println("____red___")
+	for _, i := range rs {
+		fmt.Println(i)
+	}
+
+}
+
+func checkDuplicate() {
 	var (
 		m = make([]*ltInfo, len(bp.Data))
 		i int
@@ -52,10 +106,11 @@ func AnalyseLottery() {
 		i++
 	}
 
+	// check duplicate
 	sort.Sort(ltslice(m))
 	for idx, item := range m {
 		fmt.Println(item)
-		if idx > 100 {
+		if idx > 5 {
 			break
 		}
 	}
@@ -83,7 +138,7 @@ func (self *lAgent) Do() {
 }
 
 func (self *lAgent) Parse() {
-	fmt.Println(len(bp.Data), len(bp.PhaseInfo), len(self.pages))
+	t := time.NewTicker(time.Minute)
 	for idx, page := range self.pages {
 		if bp.DoesParsed(page) {
 			continue
@@ -92,12 +147,15 @@ func (self *lAgent) Parse() {
 		url := fmt.Sprintf("http://kaijiang.500.com/shtml/ssq/%s.shtml", page)
 		self.Get(url)
 
-		if 0 != idx && idx%5 == 0 {
-			go dumpLottery()
+		select {
+		case <-t.C:
+			fmt.Println(len(bp.Data), len(bp.PhaseInfo), len(self.pages), idx)
+			dumpLottery()
+		default:
 		}
 	}
 
-	// fmt.Println(bp, "self.pages")
+	fmt.Println(len(bp.Data), len(bp.PhaseInfo), len(self.pages))
 	dumpLottery()
 }
 
@@ -112,6 +170,7 @@ func (lsp *lAgent) getPages() {
 }
 
 type BallParser struct {
+	updated                 bool
 	red, blue, phase, pages *regexp.Regexp
 	Data                    map[string][]string
 	PhaseInfo               map[string]string
@@ -145,6 +204,7 @@ func (p *BallParser) Parse(src string) {
 	} else {
 		return
 	}
+	bp.updated = true
 
 	phases := p.Data[v]
 	for _, e := range phases {
@@ -179,9 +239,14 @@ func extractGroup(src [][]string) []string {
 }
 
 func dumpLottery() {
+	if !bp.updated {
+		return
+	}
 	data, err := json.Marshal(bp)
 	panicError(err)
-	ioutil.WriteFile("lottery.json", data, 0644)
+	err = ioutil.WriteFile("lottery.json", data, 0644)
+	panicError(err)
+	bp.updated = false
 }
 
 func loadLottery() {
