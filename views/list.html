@@ -1,0 +1,6 @@
+{{range $idx, $elem := .movie}}
+    <div><h1><a href="/video?name={{$elem}}">{{$idx}}.  {{$elem}}</a></div></h1>
+{{else}}
+    <div><a href="/" id="mp" onclick="play()">没有文件</a></div>
+{{end}}
+<script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>

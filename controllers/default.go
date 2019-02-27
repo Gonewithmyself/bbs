@@ -1,7 +1,8 @@
 package controllers
 
 import (
-	"bbs/spider"
+	"os"
+	"path/filepath"
 
 	"github.com/astaxie/beego"
 )
@@ -11,21 +12,31 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	c.TplName = "index.html"
+	c.Data["movie"] = vidioes
+	c.TplName = "list.html"
 }
 
-func (c *MainController) Post() {
-	// c.TplName = "index.html"
-	data := c.GetString("ctx")
+func (c *MainController) Play() {
+	c.Data["name"] = c.GetString("name")
+	c.TplName = "video.html"
+}
 
-	res := spider.Trans(data)
-	if "" == res {
-		c.rspFailed("no such word.")
-	} else {
-		c.rspSuccess(res)
-	}
+var vidioes []string
 
-	// fmt.Println(data, "ctx", res)
+func init() {
+	listVidios()
+}
+
+func listVidios() []string {
+	//filepath.WalkFunc
+	filepath.Walk("video", func(name string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		vidioes = append(vidioes, info.Name())
+		return nil
+	})
+	return nil
 }
 
 func (c *MainController) rspSuccess(msg string) {

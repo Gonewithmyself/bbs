@@ -3,6 +3,7 @@ package main
 import (
 	_ "bbs/routers"
 	"bbs/spider"
+	"encoding/json"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -44,6 +45,9 @@ func Test_anki(t *testing.T) {
 func Test_mp3(t *testing.T) {
 	m := spider.GetM()
 	for k := range m {
+		if _, ok := mbak[k]; ok {
+			continue
+		}
 		spider.GetMp3(k)
 	}
 
@@ -53,12 +57,32 @@ func Test_mp3(t *testing.T) {
 func Test_sptmp3(t *testing.T) {
 	m := spider.GetM()
 	lines := []string{}
-	for _, card := range m {
+	for word, card := range m {
+		if _, ok := mbak[word]; ok {
+			continue
+		}
+
 		line := spider.ExportCard(card)
 		lines = append(lines, line)
 	}
 
 	data := strings.Join(lines, "")
 	ioutil.WriteFile("anki.txt", []byte(data), 0644)
-	t.Error("xx")
+	t.Error("xx", len(mbak), len(m))
+}
+
+var mbak map[string]*spider.Card
+
+func init() {
+	mbak = make(map[string]*spider.Card)
+
+	data, err := ioutil.ReadFile("data_bak.txt")
+	if nil != err {
+		panic(err)
+	}
+
+	err = json.Unmarshal(data, &mbak)
+	if nil != err {
+		panic(err)
+	}
 }
