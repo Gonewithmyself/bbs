@@ -12,13 +12,18 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	c.Data["movie"] = vidioes
+	c.Data["movie"] = listVidios()
 	c.TplName = "list.html"
 }
 
 func (c *MainController) Play() {
 	c.Data["name"] = c.GetString("name")
 	c.TplName = "video.html"
+}
+
+func (c *MainController) GetFiles() {
+	c.Data["movie"] = listFiles("file")
+	c.TplName = "files.html"
 }
 
 var vidioes []string
@@ -29,14 +34,19 @@ func init() {
 
 func listVidios() []string {
 	//filepath.WalkFunc
-	filepath.Walk("video", func(name string, info os.FileInfo, err error) error {
+	return listFiles("video")
+}
+
+func listFiles(path string) []string {
+	var ss []string
+	filepath.Walk(path, func(name string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
 		}
-		vidioes = append(vidioes, info.Name())
+		ss = append(ss, info.Name())
 		return nil
 	})
-	return nil
+	return ss
 }
 
 func (c *MainController) rspSuccess(msg string) {

@@ -10,5 +10,7 @@ func init() {
 	beego.Router("/", &controllers.MainController{})
 	beego.Router("/video", &controllers.MainController{}, "*:Play")
 
+	beego.Router("/sfile", &controllers.MainController{}, "*:GetFiles")
+
 	beego.Router("/table", &controllers.TableController{})
 }

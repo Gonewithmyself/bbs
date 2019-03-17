@@ -8,5 +8,6 @@ import (
 
 func main() {
 	beego.SetStaticPath("/videos", "video")
+	beego.SetStaticPath("/file", "file")
 	beego.Run()
 }

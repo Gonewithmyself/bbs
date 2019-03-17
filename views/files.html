@@ -1,0 +1,5 @@
+{{range $idx, $elem := .movie}}
+    <div><h1><a href="/file/{{$elem}}">{{$idx}}.  {{$elem}}</a></div></h1>
+{{else}}
+    <div><a href="/">没有文件</a></div>
+{{end}}
