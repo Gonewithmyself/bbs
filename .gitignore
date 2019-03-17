@@ -5,3 +5,6 @@ beego_blog
 bbs
 anki
 *.mp3
+*.pdf
+*.mp4
+*.mkv
